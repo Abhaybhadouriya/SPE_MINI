@@ -31,8 +31,5 @@
       ignore_errors: true
 
     - name: Run Docker container
-      docker_container:
-        name: calci
-        image: abhay003/calculator:latest
-        state: started
-        detach: yes
+      shell: >
+        docker run -it -d --name calci abhay003/calculator
