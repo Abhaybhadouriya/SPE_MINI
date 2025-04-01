@@ -1,0 +1,100 @@
+pipeline {
+    agent any
+    triggers { 
+      githubPush() 
+   }
+    environment {
+        DOCKER_IMAGE_NAME = 'calculator'
+        GITHUB_REPO_URL = 'https://github.com/Abhaybhadouriya/miniProject_SPE.git'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                     checkout([
+                    // Checkout the code from the GitHub repository
+                        $class: 'GitSCM', 
+                        branches: [[name: '*/main']], 
+                        userRemoteConfigs: [[
+                            url: "${GITHUB_REPO_URL}",
+                            credentialsId: 'git'
+                        ]]
+                     ])
+                }
+            }
+        }
+        stage('Build with Maven') {
+                    steps {
+                        script {
+                            // Run Maven build
+                            sh 'mvn clean install' // or 'mvn package', depending on your project setup
+                        }
+                    }
+                }
+
+        stage('Test') {
+                    steps {
+                        script {
+                            // Run Maven tests
+                            sh 'mvn test' // This will run any defined tests, e.g., JUnit tests
+                        }
+                    }
+                }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build Docker image
+                    docker.build("${DOCKER_IMAGE_NAME}", '.')
+                }
+            }
+        }
+
+        stage('Push Docker Images')    {
+            steps {
+                script{  
+                    docker.withRegistry('', 'DockerHubCred') {
+                    sh 'docker tag calculator abhay003/calculator:latest'
+                    sh 'docker push abhay003/calculator'
+                    }
+                 }
+            }
+        }
+        stage('Run Ansible Playbook') { 
+            steps {
+                script {
+                withEnv(["ANSIBLE_HOST_KEY_CHECKING=False"]) {   
+                    ansiblePlaybook(
+                        playbook: 'deploy.yml',
+                        inventory: 'inventory'
+                    )
+                }
+            }
+        }
+        }
+
+  
+    }
+     post {
+            success {
+                emailext(
+                    to: 'sbhadouriya39@gmail.com',
+                    subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """<p>The build and deployment were <b>successful!</b></p>
+                             <p>Check the build details: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>"""
+                )
+            }
+            failure {
+                emailext(
+                    to: 'sbhadouriya39@gmail.com',
+                    subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """<p>The build or deployment <b>failed!</b></p>
+                             <p>Check the build details: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>"""
+                )
+            }
+            always {
+                cleanWs()
+            }
+        }
+
+    }

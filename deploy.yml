@@ -1,0 +1,38 @@
+---
+- name: Pull Docker Image from Docker Hub and Run Container
+  hosts: localhost
+  remote_user: abhay
+  become: false
+  tasks:
+
+    - name: Install Python Docker SDK
+      apt:
+        name: python3-docker
+        state: present
+
+    - name: Pull Docker Image from Docker Hub
+      docker_image:
+        name: "abhay003/calculator:latest"
+        source: pull
+      register: docker_pull_result
+
+    - name: Display Docker Pull Result
+      debug:
+        var: docker_pull_result
+
+    - name: Ensure Docker service is started
+      service:
+        name: docker
+        state: started
+
+    - name: Stop and remove existing container if it exists
+      shell: |
+        docker rm -f calci || true
+      ignore_errors: true
+
+    - name: Run Docker container
+      docker_container:
+        name: calci
+        image: abhay003/calculator:latest
+        state: started
+        detach: yes
