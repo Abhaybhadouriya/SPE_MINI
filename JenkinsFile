@@ -24,6 +24,14 @@ pipeline {
                 }
             }
         }
+        stage('Check Workspace') {
+            steps {
+                script {
+                    sh 'ls -lah'  // Lists files to confirm POM presence
+                }
+            }
+        }
+
         stage('Build with Maven') {
                     steps {
                         script {
