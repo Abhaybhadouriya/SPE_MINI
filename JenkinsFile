@@ -27,16 +27,15 @@ pipeline {
         stage('Check Workspace') {
             steps {
                 script {
-                    sh 'ls -lah'  // Lists files to confirm POM presence
-                }
+                    sh 'ls -lah'
             }
         }
 
         stage('Build with Maven') {
                     steps {
                         script {
-                            // Run Maven build
-                            sh 'mvn clean install' // or 'mvn package', depending on your project setup
+
+                            sh 'mvn clean install'
                         }
                     }
                 }
@@ -45,7 +44,7 @@ pipeline {
                     steps {
                         script {
                             // Run Maven tests
-                            sh 'mvn test' // This will run any defined tests, e.g., JUnit tests
+                            sh 'mvn test'
                         }
                     }
                 }
